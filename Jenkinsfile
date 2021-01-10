@@ -12,7 +12,7 @@ node('master') {
 	}
 
 	stage ('Sonar Analysis'){
-		//sh 'mvn sonar:sonar -Dsonar.host.url=http://localhost:9000'
+		sh 'mvn sonar:sonar -Dsonar.host.url=http://3.83.235.124:9000/ -Dssonar.login=6bd24d2f5a956dbcdb0b68435b5fcc3c7145f380'
 	}
 
 	stage ('Archive Artifacts'){
@@ -27,7 +27,7 @@ node('master') {
 		emailext (
 		      subject: "Job Completed",
 		      body: "Jenkins Pipeline Job for Maven Build got completed !!!",
-		      to: "anuj_sharma401@yahoo.com"
+		      to: "umpraveen@gmail.com"
 		    )
 	}
 }
