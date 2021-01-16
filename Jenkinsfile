@@ -1,33 +1,43 @@
-node('master') {
-	stage ('checkout code'){
-		checkout scm
-	}
-	
-	stage ('Build'){
-		sh "mvn clean install -Dmaven.test.skip=true"
-	}
+pipeline {
+	environment {
 
-	stage ('Test Cases Execution'){
-		sh "mvn clean org.jacoco:jacoco-maven-plugin:prepare-agent install -Pcoverage-per-test"
+		registry = "umpr/mavenbuild"
+		registryCredential = 'dockerhubCreds'
+		dockerImage = ''
 	}
-
-	stage ('Sonar Analysis'){
-		sh 'mvn sonar:sonar -Dsonar.host.url=http://3.83.235.124:9000/ -Dsonar.login=6bd24d2f5a956dbcdb0b68435b5fcc3c7145f380'
-	}
-
-	stage ('Archive Artifacts'){
-		archiveArtifacts artifacts: 'target/*.war'
-	}
-	
-	stage ('Deployment'){
-		//sh 'cp target/*.war /opt/tomcat8/webapps'
-	}
-	stage ('Notification'){
-		//slackSend color: 'good', message: 'Deployment Sucessful'
-		emailext (
-		      subject: "Job Completed",
-		      body: "Jenkins Pipeline Job for Maven Build got completed !!!",
-		      to: "umpraveen@gmail.com"
-		    )
+	agent any
+	stages {
+		stage('Complile the project') {
+			steps {
+				sh 'mvn clean package'
+			}
+		}
+		stage('Building our image') {
+			steps {
+				script {
+					dockerImage = docker.build registry + ":$BUILD_NUMBER"
+				}
+			}
+		}
+		stage('Deploy our image') {
+			steps {
+				script {
+					docker.withRegistry('', registryCredential) {
+					    dockerImage.push()
+					    dockerImage.pull()
+					}
+				}
+			}
+		}
+		stage('Pull and Run image') {
+			steps {
+				script {
+					docker.withRegistry('', registryCredential) {
+						
+						dockerImage.run('-d -p 8080:8080 --name mavenbuild ')
+					}
+				}
+			}
+		}
 	}
 }
