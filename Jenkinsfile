@@ -56,7 +56,7 @@ sh(returnStdout: true, script: '''#!/bin/bash
 				script {
 					docker.withRegistry('', registryCredential) {
 
-						dockerImage.run('-d -p 8080:8080 --name mavenbuild ')
+						dockerImage.run('-p 8080:8080 --name mavenbuild ')
 					}
 				}
 			}
