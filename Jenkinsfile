@@ -2,8 +2,8 @@ pipeline {
 	environment {
 
 		registry = "umpr/mavenbuild"
-		registryCredential = 'dockerhubCreds'
-		dockerImage = ''
+			registryCredential = 'dockerhubCreds'
+			dockerImage = ''
 	}
 	agent any
 	stages {
@@ -21,19 +21,38 @@ pipeline {
 		}
 		stage('Deploy our image') {
 			steps {
+
 				script {
 					docker.withRegistry('', registryCredential) {
-					    dockerImage.push()
-					    dockerImage.pull()
+						dockerImage.push()
+						sh(returnStdout: true, script: '' '#!/bin/bash
+							            result=$(sudo docker ps | grep -i "mavenbuild")
+							            if [ -n "$result"  ];then
+							            echo "Stop container"
+							            docker stop mavenbuild;
+							            echo "Remove container";
+							            docker rm mavenbuild;
+							            else
+							            echo "Did not find the container"
+							            fi
+							        ' ''.stripIndent())
+
+						sh(returnStdout: true, script: '' '#!/bin/bash
+							            imags=$(sudo docker images --filter=reference=umpr/mavenbuild --format "{{.ID}}")
+							            for img in $imags; do  docker image rm $img -f; done
+							        ' ''.stripIndent())
+
+						dockerImage.pull()
 					}
 				}
+
 			}
 		}
 		stage('Pull and Run image') {
 			steps {
 				script {
 					docker.withRegistry('', registryCredential) {
-						
+
 						dockerImage.run('-d -p 8080:8080 --name mavenbuild ')
 					}
 				}
